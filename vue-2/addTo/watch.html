@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<script src="vue.js"></script>
+    <script src="vue-resource.js"></script>
+    <script type="text/javascript">
+    	window.onload=function(){
+    		var vm = new Vue({
+    			el:'#box',
+    			data:{
+    				n:1,
+    				s:2,
+    				json:{
+    					name:'abc',
+    					age:18
+    				}
+    			}
+    		})
+    		/*vm.$watch('n',function(){  //浅度监听
+    			alert('发生变化了');
+    			this.s=222;
+    		})*/
+    		
+    		/*document.onclick=function(){
+    			vm.n=111;
+    		}*/
+    		vm.$watch('json',function(){  //深度监听  deep:true
+    			alert('发生变化了');
+    		},{deep:true});
+    		document.onclick=function(){
+    			vm.json.name='cba';
+    		}
+    	}
+    </script>
+</head>
+<body>
+ 	<div id="box">
+ 		{{n}}
+ 		<br>
+ 		{{s}}
+ 		<br>
+ 		{{json | json}}
+ 	</div>
+</body>
+</html>

@@ -1,0 +1,245 @@
+﻿<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>建议留言</title>
+    <link href="style/weibo.css" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+        [v-cloak]{
+            display: none;
+            /*防止闪烁   花括号暴露*/
+        }
+    </style>
+    <script src="vue.js"></script>
+    <script src="vue-resource.js"></script>
+    <script>
+        //自定义过滤器
+        Vue.filter('date',function(input){
+            var oDate = new Date(input*1000);
+            return oDate.getFullYear()+'-'+(oDate.getMonth()+1)+'-'+oDate.getDate()+'  '+oDate.getHours()+':'+oDate.getMinutes()+':'+oDate.getSeconds();
+        })
+        //自定义指令  属性指令
+        Vue.directive('red',function(){   //v-red写 red就可以
+            this.el.style.color='red';
+        })
+        //自定义键盘事件
+        Vue.directive('on').keyCodes.ctrl=17;
+
+        //自定义指令 实现拖拽
+        Vue.directive('drag',function(){
+            var oDiv = this.el;
+            oDiv.onmousedown=function(ev){
+                var disX = ev.clientX - oDiv.offsetLeft;
+                var disY = ev.clientY - oDiv.offsetTop;
+
+                document.onmousemove = function(ev){
+                    var l = ev.clientX-disX;
+                    var t = ev.clientY-disY;
+                    oDiv.style.left=l+'px';
+                    oDiv.style.top=t+'px';
+                }
+                document.onmouseup = function(){
+                    document.onmousemove=null;
+                    document.onmouseup=null;
+                }
+            }
+        })
+
+
+
+        window.onload=function(){          
+
+
+            var URL = 'liuyan.php';
+
+            var vm = new Vue({
+                el:'.Area',
+                data:{
+                    t1:'',
+                    myData:[],
+                    count:0,
+                    iPage:1
+                },
+                methods:{
+                    add:function(){
+                        if(this.t1=='') return;
+                        this.$http({
+                            url:URL,
+                            data:{ //给后台发送的数据
+                                act:'add',
+                                content:this.t1
+                            }
+                        }).then(function(res){
+                            /*var json = res.data;
+                            this.myData.unshift({
+                                content:this.t1,
+                                time:json.time,
+                                acc:0,
+                                ref:0,
+                                id:json.id
+                            })*/
+                            this.t1='';
+                            this.getPage(1);
+                            this.getPageLength();
+                        })
+                    },
+                    getPage:function(n){ 
+                        this.$http({
+                            url:URL,
+                            data:{
+                                act:'get',
+                                page:n
+                            }
+                        }).then(function(res){
+                            this.myData=[];
+                            var arr = res.data;
+                            for(var i=0; i<arr.length; i++){
+                                this.myData.push({
+                                    content:arr[i].content,
+                                    time:arr[i].time,
+                                    acc:arr[i].acc,
+                                    ref:arr[i].ref,
+                                    id:arr[i].id
+                                })
+                            }
+                        })
+                    },
+                    getPageLength:function(){
+                        this.$http({
+                            url: URL,
+                            data:{
+                                act:'get_page_count'
+                            }
+                        }).then(function(res){
+                            this.count = res.data.count;
+                        })
+                    },
+                    getOtherPage:function(event){
+                        var pageNum = event.target.innerText;
+                        this.getPage(pageNum);
+                        this.iPage=pageNum;
+                    },
+                    topBar:function(event,id){
+                        this.$http({
+                            url:URL,
+                            data:{
+                                act:'acc',
+                                id:id
+                            }
+                        }).then(function(res){
+                            event.target.innerHTML++;
+                        })
+                    },
+                    stepOn:function(event,id){
+                        this.$http({
+                            url:URL,
+                            data:{
+                                act:'ref',
+                                id:id
+                            }
+                        }).then(function(res){
+                            event.target.innerHTML++;
+                        })
+                    },
+                    del:function(event,id){
+                        this.$http({
+                            url:URL,
+                            data:{
+                                act:'del',
+                                id:id
+                            }
+                        }).then(function(){
+                            this.getPage(this.iPage);
+                            this.getPageLength();
+                        })
+                    }
+                },
+                created:function(){
+                    this.getPage(1);
+                    this.getPageLength();
+                }
+
+
+
+
+                /*,
+                created:function(){
+                    alert('实例已经创建');
+                },
+                beforeCompile:function(){
+                    alert('编译之前');
+                },
+                compiled:function(){
+                    alert('编译之后');
+                },
+                ready:function(){
+                    alert('插入到文档中')
+                },
+                beforeDestroy:function(){
+                    alert('销毁之前');
+                },
+                destroyed:function(){
+                    alert('销毁之后');
+                }*/
+
+            });
+            //销毁vue对象
+            /*document.onclick=function(){
+                vm.$destroy();
+            }*/
+
+            //手动挂载
+            /* vm.$mount('box'); */
+            //获取自定义属性
+            /*vm.$options('aaa');*/
+            //查看现在的数据状态
+            /*vm.$log();*/
+
+
+            /*会有重复数据 不能添加  track-by='索引' 好处：会提高循环的性能*/
+
+            new Vue({
+                el:'#box'
+            })
+
+        };
+        
+    </script>
+</head>
+
+<body>
+<div class="Area">
+<!--留言-->
+     <div class="takeComment">
+        <textarea name="textarea" class="takeTextField" id="tijiaoText" v-model="t1"></textarea>
+        <div class="takeSbmComment">
+            <input type="button" class="inputs" value="" @click="add()" />
+            <span>(可按 Enter 回复)</span>
+        </div>
+    </div>
+<!--已留-->
+    <div class="commentOn" v-cloak>
+        <div class="noContent" v-show="this.myData.length==0">暂无留言</div>
+        <div class="messList">
+        	<div class="reply" v-for="item in myData"  data-id="{{item.id}}">
+                <p class="replyContent" v-red>{{item.content}}</p>
+                <p class="operation">
+                    <span class="replyTime">{{item.time | date}}</span>
+                    <span class="handle">
+                    	<a href="javascript:;" class="top" @click="topBar($event,item.id)">{{item.acc}}</a>
+                        <a href="javascript:;" class="down_icon" @click="stepOn($event,item.id)">{{item.ref}}</a>
+                        <a href="javascript:;" class="cut" @click="del($event,item.id)">删除</a>
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="page" v-show="this.myData.length!=0">
+        	<a href="javascript:;" class="" v-for="item in count" @click="getOtherPage">
+                {{$index+1}}   
+            </a>
+        </div>
+    </div>
+</div>
+<div v-drag id="box" :style="{width:'100px',height:'100px',background:'blue',position:'absolute',left:0,bottom:0}"></div>
+</body>
+</html>
