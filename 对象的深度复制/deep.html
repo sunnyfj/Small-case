@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>copy</title>
+</head>
+<body>
+	<script>
+		var oPerson={
+			
+		    name:'fj',
+
+		    age:'24',
+
+		    address:{
+
+		        province:'beijing'
+
+		    },
+		    ofavorite:[
+
+		        'lol',
+
+		        {reading:'api'}
+
+		    ],
+		    show:function(){
+
+		        console.log('show');
+
+		    }
+		};
+
+		function copy(obj){
+
+			var result = {};
+
+			for(attr in obj){
+				result[attr] = obj[attr]
+			}
+
+			return result;
+		}
+
+		//var oNew = copy(oPerson);
+
+		//console.log(oPerson.address.province) //'beijing'
+
+		//oNew.address.province = 'chaoyang';	  
+
+		//console.log(oNew.address.province)   //'chaoyang'
+
+		//console.log(oPerson.address.province)  //'chaoyang'  经过对象克隆以后，修改oNew的地址，原对象oPerson也被修改
+
+		//首先 要知道如果for循环以后，得到的元素仍是Object或者Array，那么需要再次循环，直到元素是原始类型或者函数为止
+
+		//为了得到元素的类型，定义一个通用函数，用来返回传入对象的类型
+		function isClass(type){
+
+			if(type == null) return null;
+
+			if(type == undefined)  return undefined;
+
+			//Object.prototype.toString.call(type) 直接准确返回  "[object Array]"  通过截取到Array
+			return Object.prototype.toString.call(type).slice(8,-1);
+
+		}
+
+		//疑问？
+		//（1）为什么不直接用toString方法？这是为了防止对象中的toString方法被重写，为了正确的调用toString()版本，必须间接的调用Function.call()方法
+
+		//（2）为什么不使用typeof来直接判断类型？因为对于Array而言，使用typeof（Array）返回的是object，所以不能得到正确的Array
+
+		//alert(isClass([]))  //Array
+
+		function deepCopy(obj){
+
+			var result;
+			var oType = isClass(obj);
+
+			if(oType === 'Object'){
+
+				result = {};
+
+			}else if(oType === 'Array'){
+
+				result = [];
+
+			}else{
+
+				return obj;
+			}
+
+			for(var attr in obj){
+
+				var single = obj[attr];
+
+				if(isClass(single) === 'Object'){
+
+					//result[attr] = arguments.callee(single); //递归调用
+
+					result[attr] = deepCopy(single);//递归调用
+
+				}else if(isClass(single) === 'Array'){
+
+					//result[attr] = arguments.callee(single);
+
+					result[attr] = deepCopy(single);
+
+				}else{
+					result[attr] = obj[attr];
+				}
+			}
+
+			return result;
+
+		}
+
+		var newObj = deepCopy(oPerson);
+
+		console.log(oPerson.address.province) //beijing
+
+		newObj.address.province = 'chaoyang';
+
+		console.log(newObj.address.province) //'chaoyang'
+
+		console.log(oPerson.address.province) //beijing 
+		//此时发现 深度克隆的对象可以完全脱离原对象，对新对象的任何修改都不会反映到原对象中
+
+
+		//实现了对象的深度复制 但是arguments.callee  已经不推荐使用了
+
+		//arguments.callee简介 ：在函数内部，有两个特殊的对象：arguments 和 this。其中， arguments 的主要用途是保存函数参数， 但这个对象还有一个名叫 callee 的属性，该属性是一个指针，指向拥有这个 arguments 对象的函数
+
+		//原因：访问 arguments 是个比较昂贵的操作，因为它是个很大的对象，每次递归调用时都需要重新创建，影响现代浏览器的性能，还会影响闭包。
+		
+		//想解决办法前先看以下示例 ↓
+
+
+		//例子 一道面试题。接受参数n=5,不用for循环输出数组【1,2,3,4,5】
+
+		//这用递归的思路，配合arguments.callee，代码如下
+		function show(n) {
+		    var arr = [];
+		    return (function () {
+		        arr.unshift(n);
+		        n--;
+		        if (n != 0) {
+		            arguments.callee();
+		        }
+		        return arr;
+		    })()
+		}
+		show(5)//[1,2,3,4,5]
+
+		//现在arguments.callee 被弃用了。怎么办，其实很简单，给内部函数一个名字即可
+		function show(n) {
+		    var arr = [];
+		    return (function fn() {
+		        arr.unshift(n);
+		        n--;
+		        if (n != 0) {
+		            fn();
+		        }
+		        return arr;
+
+		    })()
+		}
+		show(5)//[1,2,3,4,5]
+
+		//如上例子所示 把deepCopy函数中的 arguments.callee 改为调用自己本身即可  
+		//即：result[attr] = deepCopy(single); //递归调用
+
+		//此时得到的结果和arguments.callee得到的结果相同 修改新的对象后 之前对象也不会被修改
+
+
+
+		/*
+			注 ：首先以上代码有借鉴别人的   写demo的思想来源是因为前些天找工作时面试官的口头问题  然后就是个人的小总结学习啦~
+		*/
+
+
+	</script>
+</body>
+</html>
