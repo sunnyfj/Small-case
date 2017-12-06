@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<script>
+		//利用set数组去重
+		const arr1 = [{},1,1,2,2,6,[],'b','a','a'];
+		console.log([...new Set(arr1)])
+
+
+		//es5的面向对象
+
+		const A = function(a,b){
+			this.a = a;
+			this.b =b;
+			return this;
+		}
+
+		A.prototype = {
+			constructor:A,
+			show:function(){
+				console.log(this.a + ' ' +this.b);
+			}
+		};
+
+
+		const myA = new A('hello','world').show();
+
+
+		//es6   class 类   中间不写 逗号  不用写function  关键字   被类定义的 方法都是不可以被枚举的   constructor 不写 会自动生成
+		class B {
+			constructor(a,b){
+				this.a = a;
+				this.b = b;
+			}
+			show(){
+				console.log(this.a + '  '+ this.b)
+			}
+
+		};
+
+		const myB = new B('hello B','world B').show();
+
+		//class 继承   extents static super
+
+
+
+	</script>
+</body>
+</html>

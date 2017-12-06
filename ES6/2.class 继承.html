@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+
+	<style>
+		canvas {
+			box-shadow: 2px 2px 12px rgba(0,0,0,.5);
+		}
+	</style>
+</head>
+<body>
+
+	<canvas id="canvas"></canvas>
+
+	<script>
+		
+		const canvas = document.querySelector('#canvas');
+		//获取画布对应的绘图环境
+		const ctx = canvas.getContext('2d');
+
+		//初始化画布的分辨率
+		const w = canvas.width = 600;
+		const h =  canvas.height = 400;
+
+		class Ball {
+			constructor(x,y,r){
+				this.x = x;
+				this.y = y;
+				this.r = r;
+				// ~~ 为 去掉小数点后面的数字
+				this.color = `rgb(${~~Ball.rpFn([55,255])},${~~Ball.rpFn([55,255])},${~~Ball.rpFn([55,255])})`;
+				return this;
+			}
+
+			render(ctx){
+				ctx.save();
+				ctx.translate(this.x,this.y);
+				ctx.fillStyle = this.color;
+				ctx.beginPath();
+				ctx.arc(0,0,this.r,0,2*Math.PI);
+				ctx.fill();
+				ctx.restore();
+				return this;
+			}
+
+			//指定类的静态方法
+			static rpFn(arr){ //ball.rpFn([1,10]) 
+				let max = Math.max(...arr),
+					min = Math.min(...arr);
+
+				return Math.random() * (max - min ) + min;
+			}
+		}
+
+		//const Ball1 = new Ball(100,100,30).render(ctx);
+
+		class SuperBall extends Ball {
+
+			constructor(x,y,r){
+
+				super(x,y,r); //调用父类构造函数  第一种使用处
+
+				this.vy = SuperBall.rpFn([2,4]);
+				this.g = SuperBall.rpFn([0.2,0.4]);
+				this.a = 0;
+
+			}
+
+			move(ctx){
+
+				//super.render();
+
+				this.y += this.vy;
+				this.vy += this.g;
+
+				let current = this.vy * -0.75;
+
+				if(this.y + this.r >= canvas.height ){
+					this.y = canvas.height - this.r;
+
+					if(Math.abs(current - this.a) < 0.01) return false;
+
+					this.a = this.vy *= -0.75;
+				}
+
+				ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+
+				super.render(ctx); //调用父类原型上的函数  第二种使用处
+
+				return true;
+			}
+		}
+
+
+		//const Ball2 = new SuperBall(100,100,30).render(ctx);
+
+
+		let ball3,timer;
+
+		canvas.onclick = function(e){
+			let x = e.offsetX;
+			let y = e.offsetY;
+			let r = ~~SuperBall.rpFn([20,50]);
+			
+			ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); //为了每次点击只能是一个 清除画布
+
+			ball3 = new SuperBall(x,y,r).render(ctx);
+
+			moveBall();
+
+		}
+
+		function moveBall(){
+			timer = window.requestAnimationFrame(moveBall);
+
+			if(!ball3.move(ctx)){
+				window.cancelAnimationFrame(timer);
+			}
+
+		}
+
+	</script>
+</body>
+</html>
