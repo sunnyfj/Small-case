@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<canvas id="test" width="176" height="176"></canvas>
+	<script>
+		
+		
+		function targetPolo(id,current,max,name){
+			let canvas = document.getElementById(id);
+			//if(!canvas.getContext("2d")) return;
+	        let ctx  = canvas.getContext("2d");
+	        let M = Math;
+	        let Sin = M.sin;
+	        let Cos = M.cos;
+	        let Sqrt = M.sqrt;
+	        let Pow = M.pow;
+	        let PI = M.PI;
+	        let Round = M.round;
+
+	        let oW = canvas.width = 176;
+	        let oH = canvas.height = 176;
+
+	        // 线宽
+	        let lineWidth = 1
+
+	        // 大半径
+	        let r = (oW / 2);
+	        let cR = r - 8*lineWidth;
+
+	        ctx.beginPath();
+
+	        ctx.lineWidth = lineWidth;
+
+	        // 水波动画初始参数
+	        let axisLength = 2*r - 16*lineWidth;  // Sin 图形长度
+	        let unit = axisLength / 8; // 波浪宽
+	        let range = .3 // 浪幅
+	        let nowrange = range;  
+	        let xoffset = 8*lineWidth; // x 轴偏移量
+	        let data = 0;
+	        if(max > 0){
+	        	let initData = current / max;
+	        	data = initData>0? initData : 0   // 数据量
+	        }
+	        //let data = initData   // 数据量
+	        let sp = 0; // 周期偏移量
+	        let nowdata = 0;
+	        let waveupsp = 0.002; // 水波上涨速度
+
+	        // 圆动画初始参数
+	        let arcStack = [];  // 圆栈
+	        let bR = r-8*lineWidth;
+	        let soffset = -(PI/2); // 圆动画起始位置
+	        let circleLock = true; // 起始动画锁
+
+	        // 获取圆动画轨迹点集
+	        for(var i = soffset; i< soffset + 2*PI; i+=4/(8*PI)) {
+	            arcStack.push([
+	                r + bR * Cos(i),
+	                r + bR * Sin(i)
+	            ])
+	        }
+
+	        let cStartPoint = arcStack.shift();  // 圆起始点
+
+	        ctx.strokeStyle = "#46a4d1";
+	        ctx.moveTo(cStartPoint[0],cStartPoint[1])
+
+	        render();  // 开始渲染
+
+	        function drawSine () {
+	            ctx.beginPath();
+	            ctx.save();
+	            var Stack = []; // 记录起始点和终点坐标
+	            for (var i = xoffset; i<=xoffset + axisLength; i+=20/axisLength) {
+	                var x = sp + (xoffset + i) / unit;
+	                var y = Sin(x) * nowrange;
+
+	                var dx = i;
+
+	                var dy = 2*cR*(1-nowdata) + (r - cR) - (unit * y);
+	            
+	                ctx.lineTo(dx, dy);
+	                Stack.push([dx,dy])
+	            }
+
+	          // 获取初始点和结束点
+	            var startP = Stack[0]
+	            var endP = Stack[Stack.length - 1]
+
+	            ctx.lineTo(xoffset + axisLength,oW);
+	            ctx.lineTo(xoffset,oW);
+	            ctx.lineTo(startP[0], startP[1])
+	            ctx.fillStyle = "#46a4d1";
+	            ctx.fill()
+	            ctx.restore();
+	        }
+
+	        function drawText () {
+	            ctx.globalCompositeOperation = 'source-over';
+
+	            var size = 0.4*cR;
+	            ctx.font =12 + 'px Microsoft Yahei';
+	            ctx.textAlign = 'center';
+	            ctx.fillStyle = "#444";
+	            ctx.fillText(name, r, r-20);
+
+	            ctx.font = 'bold '+ 14 + 'px Microsoft Yahei';
+	            ctx.fillText((data * 100).toFixed(2) + '%', r, r + size / 2);
+	        }
+
+	        function render () {
+	            ctx.clearRect(0,0,oW,oH);
+
+	            if (circleLock) {
+	                if (arcStack.length) {
+	                    var temp = arcStack.shift();
+	                    ctx.lineTo(temp[0],temp[1])
+	                    ctx.stroke();
+	                } else {
+	                    circleLock = false;
+	                    ctx.lineTo(cStartPoint[0],cStartPoint[1])
+	                    ctx.stroke();
+	                    arcStack = null;
+
+	                    ctx.globalCompositeOperation = 'destination-over';
+	                    ctx.beginPath();
+	                    ctx.lineWidth = lineWidth;
+	                    ctx.arc(r,r, bR, 0, 2*PI, 1);
+
+	                    ctx.beginPath();  
+	                    ctx.save();
+	                    ctx.arc(r,r, r-16*lineWidth, 0, 2*PI, 1);
+	                    ctx.restore()
+	                    ctx.clip();
+
+	                    ctx.fillStyle = "#1c86d1";
+	                }
+	            } else {
+	                // 开始水波动画
+	                // 控制波幅
+	                if (data >= 0.85) {
+	                    if (nowrange > range/4) {
+	                        var t = range * 0.01;
+	                        nowrange -= t;   
+	                    }
+	                } else if (data <= 0.1) {
+	                    if (nowrange < range*1.5) {
+	                        var t = range * 0.01;
+	                        nowrange += t;   
+	                    }
+	                } else {
+	                    if (nowrange <= range) {
+	                        var t = range * 0.01;
+	                        nowrange += t;   
+	                    }      
+
+	                    if (nowrange >= range) {
+	                        var t = range * 0.01;
+	                        nowrange -= t;
+	                    }
+	                }
+
+	                if((data - nowdata) > 0) {
+	                    nowdata += waveupsp;      
+	                }
+
+	                if((data - nowdata) < 0){
+	                    nowdata -= waveupsp
+	                }
+
+	                sp += 0.07;
+	                drawSine();
+	                drawText();  
+	            }
+	            requestAnimationFrame(render)
+	        }
+		}
+		targetPolo('test',200,456,'test');
+	</script>
+</body>
+</html>
